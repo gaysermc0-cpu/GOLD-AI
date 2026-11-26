@@ -31,20 +31,21 @@ jobs:
         run: |
           unzip -q GOLD_AI_Android_Project-1.zip -d project
           SETTINGS_FILE=$(find project -name settings.gradle.kts -print -quit)
-          if [ -z "$SETTINGS_FILE" ]; then
-            echo "Settings file not found"
-            exit 1
-          fi
+          test -n "$SETTINGS_FILE" || exit 1
           PROJECT_DIR=$(dirname "$SETTINGS_FILE")
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-      - name: Fix Kotlin JVM target
+      - name: Fix JVM target
         run: |
-          find "$PROJECT_DIR" -type f \( -name 'build.gradle' -o -name 'build.gradle.kts' \) -exec sed -i \
-            -e 's/jvmTarget = "17"/jvmTarget = "1.8"/g' \
-            -e "s/jvmTarget = '17'/jvmTarget = '1.8'/g" \
-            -e 's/JvmTarget.JVM_17/JvmTarget.JVM_1_8/g' \
-            -e 's/JvmTarget.fromTarget("17")/JvmTarget.fromTarget("1.8")/g' {} \;
+          find "$PROJECT_DIR" -type f \( -name '*.gradle' -o -name '*.gradle.kts' \) -exec sed -i \
+            -e 's/jvmTarget = "1.8"/jvmTarget = "17"/g' \
+            -e "s/jvmTarget = '1.8'/jvmTarget = '17'/g" \
+            -e 's/JvmTarget.JVM_1_8/JvmTarget.JVM_17/g' \
+            -e 's/JvmTarget.fromTarget("1.8")/JvmTarget.fromTarget("17")/g' {} +
+
+      - name: Verify JVM target
+        run: |
+          grep -R -n 'jvmTarget\|VERSION_1_8\|JVM_1_8' "$PROJECT_DIR" || true
 
       - name: Build APK
         run: gradle -p "$PROJECT_DIR" assembleDebug
