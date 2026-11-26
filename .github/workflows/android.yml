@@ -1,1 +1,49 @@
 
+name: GOLD AI Android Build
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'GOLD_AI_Android_Project-1.zip'
+      - '.github/workflows/android.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download project
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Extract Android project
+        run: |
+          unzip -q GOLD_AI_Android_Project-1.zip -d project
+          SETTINGS_FILE=$(find project -name settings.gradle.kts -print -quit)
+          if [ -z "$SETTINGS_FILE" ]; then
+            echo "Android project not found"
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$SETTINGS_FILE")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      - name: Build APK
+        run: gradle -p "$PROJECT_DIR" assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOLD-AI-APK
+          path: '**/app/build/outputs/apk/debug/*.apk'
+          if-no-files-found: error
