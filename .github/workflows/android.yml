@@ -38,6 +38,16 @@ jobs:
           PROJECT_DIR=$(dirname "$SETTINGS_FILE")
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
+      - name: Fix Java Kotlin compatibility
+        run: |
+          APP_GRADLE="$PROJECT_DIR/app/build.gradle.kts"
+          if [ ! -f "$APP_GRADLE" ]; then
+            echo "App Gradle file not found"
+            exit 1
+          fi
+          sed -i 's/VERSION_1_8/VERSION_17/g' "$APP_GRADLE"
+          sed -i 's/jvmTarget = "1.8"/jvmTarget = "17"/g' "$APP_GRADLE"
+
       - name: Build APK
         run: gradle -p "$PROJECT_DIR" assembleDebug
 
